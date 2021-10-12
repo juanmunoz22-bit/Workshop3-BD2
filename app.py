@@ -1,5 +1,5 @@
 import datetime
-import pymongo, redis, json, re
+import pymongo, redis, json
 from flask import Flask, request, jsonify
 
 # Flask constructor takes the name of
@@ -7,10 +7,10 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 def get_mongo_conn():
-    return pymongo.MongoClient("mongodb://34.125.100.172:27017")
+    return pymongo.MongoClient("mongodb://104.198.159.118:27017")
 
 def get_redis_conn():
-    return redis.Redis(host = "34.125.100.172", port = 6379)
+    return redis.Redis(host = "35.193.197.219", port = 6379)
 
 
 def bytes2json(result_bytes):
@@ -28,9 +28,12 @@ def record(petId):
     record = request.json
     record["petId"] = petId
     record["datetime"] = datetime.datetime.now()
-    add_redis(record, petId)
     col.insert_one(record)
-    return "Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
+    location = record["geolocation"]
+    location_bytes=json.dumps(location).encode('utf-8')
+    location_str = str(location)
+    add_redis(location, petId)
+    return location, 201
 
 @app.route("/pet/vitals")
 def vitals_out_of_range():
@@ -53,10 +56,10 @@ def vitals_out_of_range():
         return "No existe esta mascota en el registro"
 
 
-def add_redis(record, petId):
+def add_redis(location, petId):
     r = get_redis_conn()
-    petL = json.dumps(record)
-    r.hmset("petId:{petId}:record".format(petId = petId), petL)
+    r.hmset("pet:{petId}:location".format(petId = petId), location)
+    r.expire("pet:{petId}:location".format(petId = petId), 3600)
 
 
 
