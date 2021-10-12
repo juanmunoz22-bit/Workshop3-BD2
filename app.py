@@ -1,5 +1,5 @@
 import datetime
-import pymongo
+import pymongo, redis, json, re
 from flask import Flask, request, jsonify
 
 # Flask constructor takes the name of
@@ -9,6 +9,17 @@ app = Flask(__name__)
 def get_mongo_conn():
     return pymongo.MongoClient("mongodb://34.125.100.172:27017")
 
+def get_redis_conn():
+    return redis.Redis(host = "34.125.100.172", port = 6379)
+
+
+def bytes2json(result_bytes):
+    result = {}
+    for key in result_bytes:
+        result[key.decode("utf-8")] = result_bytes[key].decode("utf-8")
+    return result
+
+
 @app.route("/pet/<petId>/record", methods = ["POST"])
 def record(petId):
     m = get_mongo_conn()
@@ -17,6 +28,7 @@ def record(petId):
     record = request.json
     record["petId"] = petId
     record["datetime"] = datetime.datetime.now()
+    add_redis(record, petId)
     col.insert_one(record)
     return "Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
 
@@ -41,8 +53,15 @@ def vitals_out_of_range():
         return "No existe esta mascota en el registro"
 
 
+def add_redis(record, petId):
+    r = get_redis_conn()
+    petL = json.dumps(record)
+    r.hmset("petId:{petId}:record".format(petId = petId), petL)
+
+
 
 if __name__ == "__main__":
     # run() method of Flask class runs the application
     # on the local development server.
     app.run()
+    
