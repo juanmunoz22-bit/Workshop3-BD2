@@ -30,10 +30,8 @@ def record(petId):
     record["datetime"] = datetime.datetime.now()
     col.insert_one(record)
     location = record["geolocation"]
-    location_bytes=json.dumps(location).encode('utf-8')
-    location_str = str(location)
     add_redis(location, petId)
-    return location, 201
+    return "Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
 
 @app.route("/pet/vitals")
 def vitals_out_of_range():
@@ -60,7 +58,6 @@ def add_redis(location, petId):
     r = get_redis_conn()
     r.hmset("pet:{petId}:location".format(petId = petId), location)
     r.expire("pet:{petId}:location".format(petId = petId), 3600)
-
 
 
 if __name__ == "__main__":
