@@ -1,5 +1,6 @@
 import datetime
 import pymongo, redis, json
+from pymongo import database
 from flask import Flask, request, jsonify
 
 # Flask constructor takes the name of
@@ -28,10 +29,10 @@ def record(petId):
     record = request.json
     record["petId"] = petId
     record["datetime"] = datetime.datetime.now()
-    col.insert_one(record)
     location = record["geolocation"]
-    add_redis(location, petId)
-    return "Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
+    fecha = add_to_redis(location, petId)
+    col.insert_one(record)
+    return " Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
 
 @app.route("/pet/vitals")
 def vitals_out_of_range():
@@ -54,10 +55,15 @@ def vitals_out_of_range():
         return "No existe esta mascota en el registro"
 
 
-def add_redis(location, petId):
+def add_to_redis(location, petId):
     r = get_redis_conn()
-    r.hmset("pet:{petId}:location".format(petId = petId), location)
+    latitud = location["lattitude"]
+    longitud = location["longitude"]
+    fecha = datetime.datetime.now()
+    fecha_f= fecha.strftime("%H:%M:%S")
+    r.hmset("pet:{}:location:{}".format(petId,fecha_f), {"latitud": latitud, "longitud": longitud, "timestamp": str(fecha_f)})
     r.expire("pet:{petId}:location".format(petId = petId), 3600)
+    return fecha_f
 
 
 if __name__ == "__main__":
