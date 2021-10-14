@@ -5,6 +5,8 @@
 ### Raúl Gonzalez
 ### Jason Jossa
 ### Moisés Salcedo
+### Sustentacion del Taller
+https://youtu.be/dLvMc98QUXU 
 
 Durante el desarrollo del proyecto decidimos hacer uso de pythoon y de algunas librerias como datetime, pymongo, redis y json. De forma que era mucho más fácil para nosotros crear los endpoints y las conexiones.
 
