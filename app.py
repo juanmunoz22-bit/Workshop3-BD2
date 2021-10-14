@@ -8,10 +8,10 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 def get_mongo_conn():
-    return pymongo.MongoClient("mongodb://104.198.159.118:27017")
+    return pymongo.MongoClient("mongodb://192.168.1.106:27017")
 
 def get_redis_conn():
-    return redis.Redis(host = "35.193.197.219", port = 6379)
+    return redis.Redis(host = "192.168.1.106", port = 6379)
 
 
 def bytes2json(result_bytes):
@@ -30,7 +30,7 @@ def record(petId):
     record["petId"] = petId
     record["datetime"] = datetime.datetime.now()
     location = record["geolocation"]
-    fecha = add_to_redis(location, petId)
+    add_to_redis(location, petId)
     col.insert_one(record)
     return " Se agrego un nuevo registro para la mascota {petId}".format(petId = petId), 201
 
@@ -42,17 +42,27 @@ def vitals_out_of_range():
     petId = int(request.args.get('petId'))
     timestamp1 =  request.args.get('date1')
     timestamp2 =  request.args.get('date2')
+    cursor = col.find({"petId": petId})
+    if cursor is not None:
+        cursor = col.find({"datetime": {"$in":[timestamp1, timestamp2]}})
+        if cursor is not None:
+            cursor_temp = col.find({"temperature": {"$not": {"$in": [38.3, 39.2]}}}, {"_id": 0})
+            pets = []
+            for pet in cursor_temp:
+                pets.append(pet)
+                return { "result": pets }
+            else:
+                return "No existe este registro de fechas en el registro para la mascota {}".format(petId)
+        else:
+            return "No existe la mascota {}".format(petId)
+    '''timestamp1 =  request.args.get('date1')
+    timestamp2 =  request.args.get('date2')
     cursor = col.find({"petId": petId, "datetime": {"$in":[timestamp1, timestamp2]}})
     if cursor is not None:
         cursor_temp = col.find({"temperature": {"$not": {"$in": [38.3, 39.2]}}}, {"_id": 0})
-        '''cursor_hr = col.find({"heart-rate": {"$not": {"$in": [60, 120]}}}, {"_id": 0})
+        cursor_hr = col.find({"heart-rate": {"$not": {"$in": [60, 120]}}}, {"_id": 0})
         cursor_breath = col.find({"breathing-frecuency": {"$not": {"$in": [10, 30]}}}, {"_id": 0})'''
-        pets = []
-        for pet in cursor_temp:
-            pets.append(pet)
-        return { "result": pets }
-    else:
-        return "No existe esta mascota en el registro"
+        
 
 
 def add_to_redis(location, petId):
