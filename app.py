@@ -3,6 +3,7 @@ import pymongo, redis, json
 from pymongo import database
 from flask import Flask, request, jsonify
 
+
 # Flask constructor takes the name of
 # current module (__name__) as argument
 app = Flask(__name__)
