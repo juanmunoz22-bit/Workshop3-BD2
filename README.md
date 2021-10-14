@@ -1,6 +1,7 @@
 # Workshop3-BD2
 
-## Integrantes
+## Integrantes:
+
 ### Juan Pablo Muñoz
 ### Raúl Gonzalez
 ### Jason Jossa
